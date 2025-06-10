@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "A collection of handy python abstractions with simple and intuitive API's"
 authors = [{ name = "Ari Fishman", email = "arifishman39@gmail.com" }]
 readme = "README.md"
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
 requires-python = ">=3.9"
 dependencies = []
 
