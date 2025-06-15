@@ -86,7 +86,14 @@ def time_in(
         utc: bool = DEFAULT
 ) -> datetime:
     """
-    Get a future datetime object, ie: until = time_in(minutes=10)
+    Get a datetime value in the future. User can specify naive or timezone-aware, and local time or utc time.
+
+    Example:
+        expire = time_in(seconds=5)
+
+        expire = time_in(minutes=3, naive=False)  # timezone aware
+
+        expire = time_in(hours=1, utc=True)  # utc time
 
     Args:
         seconds: Number of seconds to add
@@ -129,7 +136,14 @@ def time_ago(
         utc: bool = DEFAULT
 ) -> datetime:
     """
-    Get a past datetime object, ie: since = time_ago(minutes=5)
+    Get a datetime value in the past. User can specify naive or timezone-aware, and local time or utc time.
+
+    Example:
+        since = time_ago(seconds=5)
+
+        since = time_ago(minutes=3, naive=False)  # timezone aware
+
+        since = time_ago(hours=1, utc=True)  # utc time
 
     Args:
         seconds: Number of seconds to subtract
@@ -158,3 +172,121 @@ def time_ago(
         microseconds=microseconds,
         milliseconds=milliseconds
     )
+
+
+class Duration:
+    """
+    Simple duration class for easily retrieving TOTAL interval values, ie: total seconds, total minutes etc, rounded
+    down to strip decimal places, so that user gets the SECONDS ONLY etc.
+
+    Supports all standard timedelta values: seconds, minutes, hours, days, weeks, microseconds, milliseconds.
+
+    Sample usage:
+        # get timedelta interval between two datetime variables
+        interval = finished_date - started_date
+
+        # init duration class
+        duration = Duration(interval)
+
+        print(duration.seconds)  # prints total seconds (without decimals)
+        print(duration.minutes)  # prints total minutes (without decimals)
+    """
+
+    # conversion constants
+    class _convert:
+        minutes = 60
+        hours = 3600
+        days = 86400
+        weeks = 604800
+        microseconds = 1_000_000
+        milliseconds = 1000
+
+    def __init__(self, interval: timedelta):
+        self._interval = interval
+
+        self._total_seconds = interval.total_seconds()
+
+        # cache computed values to avoid recomputing
+        self._cache = {}
+
+    def _compute(self, unit, divide=None, multiply=None):
+        # return cached computed value
+        if unit in self._cache:
+            return self._cache[unit]
+
+        # compute unit value using timedelta's total_seconds value
+        value = self._total_seconds
+
+        if divide:
+            value /= divide
+
+        elif multiply:
+            value *= multiply
+
+        # remove decimal places
+        value = int(value)
+
+        self._cache[unit] = value
+
+        return value
+
+    @property
+    def seconds(self) -> int:
+        """Return total seconds."""
+        return self._compute('seconds')
+
+    @property
+    def minutes(self) -> int:
+        """Return total minutes."""
+        return self._compute('minutes', divide=self._convert.minutes)
+
+    @property
+    def hours(self) -> int:
+        """Return total hours."""
+        return self._compute('hours', divide=self._convert.hours)
+
+    @property
+    def days(self) -> int:
+        """Return total days."""
+        return self._compute('days', divide=self._convert.days)
+
+    @property
+    def weeks(self) -> int:
+        """Return total weeks."""
+        return self._compute('weeks', divide=self._convert.weeks)
+
+    @property
+    def microseconds(self) -> int:
+        """Return total microseconds."""
+        return self._compute('microseconds', multiply=self._convert.microseconds)
+
+    @property
+    def milliseconds(self) -> int:
+        """Return total milliseconds."""
+        return self._compute('milliseconds', multiply=self._convert.milliseconds)
+
+    def __repr__(self):
+        return str(self._interval)
+
+
+def difference(value1: datetime, value2: datetime) -> Duration:
+    """
+    Compare two datetime's to each other and return a Duration instance, never returning a negative interval.
+
+    Example:
+        diff = difference(create_date, complete_date)
+
+        print(f"{diff.hours}:{diff.minutes}:{diff.seconds}.{diff.milliseconds}")
+
+    Args:
+        value1: datetime value one
+        value2: datetime value two
+
+    Returns:
+        Duration object
+    """
+    # get positive interval difference
+    interval = abs(value1 - value2)
+
+    # return duration instance
+    return Duration(interval)
