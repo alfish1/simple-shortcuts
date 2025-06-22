@@ -21,6 +21,9 @@ class Config:
     # return utc time instead of local time
     utc: bool = getenv('SHORTCUTS_DATE_UTC', 'false').lower() == 'true'
 
+    # default timestamp format string
+    format: str = None
+
 
 def _time_value(naive, utc, add=False, subtract=False, **intervals):
     """
@@ -58,6 +61,7 @@ def _time_value(naive, utc, add=False, subtract=False, **intervals):
 
 
 def time_now(
+        *,
         naive: bool = DEFAULT,
         utc: bool = DEFAULT
 ) -> datetime:
@@ -75,6 +79,7 @@ def time_now(
 
 
 def time_in(
+        *,
         seconds: int = 0,
         minutes: int = 0,
         hours: int = 0,
@@ -125,6 +130,7 @@ def time_in(
 
 
 def time_ago(
+        *,
         seconds: int = 0,
         minutes: int = 0,
         hours: int = 0,
@@ -172,6 +178,56 @@ def time_ago(
         microseconds=microseconds,
         milliseconds=milliseconds
     )
+
+
+def timestamp(
+        format: str = None,
+        *,
+        utc: bool = DEFAULT
+) -> str:
+    """
+    Get current datetime string.
+
+    User can specify local time or utc time.
+
+    User can also specify exact python `strftime` format string. Use Config.format to set global default value.
+
+    Example:
+        print(timestamp())  # '2025-06-22T16:54:58.507887'
+
+        print(timestamp('%Y-%m-%d %H:%M:%S'))  # '2025-06-22 16:54:58'
+
+        print(timestamp(utc=True))  # '2025-06-22T20:54:58.507887'
+
+    Args:
+        format: `strftime` format string
+        utc: Whether to return local or utc timestamp. Defaults to Config.utc value
+
+    Returns:
+        datetime string
+    """
+
+    # get current datetime
+    now = _time_value(naive=False, utc=utc)
+
+    # user specified format
+    if format:
+        pass
+
+    # user specified global format
+    elif Config.format:
+        format = Config.format
+
+    # use default naive format
+    elif Config.naive:
+        format = '%Y-%m-%dT%H:%M:%S.%f'
+
+    # use default timezone-aware format
+    else:
+        format = '%Y-%m-%dT%H:%M:%S.%f%z'
+
+    # return formatted timestamp
+    return now.strftime(format)
 
 
 class Duration:
@@ -271,7 +327,7 @@ class Duration:
 
 def difference(value1: datetime, value2: datetime) -> Duration:
     """
-    Compare two datetime's to each other and return a Duration instance, never returning a negative interval.
+    Compare two datetimes to each other and return a Duration instance, never returning a negative interval.
 
     Example:
         diff = difference(create_date, complete_date)
