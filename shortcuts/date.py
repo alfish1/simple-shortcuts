@@ -230,6 +230,7 @@ def timestamp(
     return now.strftime(format)
 
 
+# moving duration and difference to backup branch
 class Duration:
     """
     Simple duration class for easily retrieving TOTAL interval values, ie: total seconds, total minutes etc, rounded
